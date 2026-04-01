@@ -1,60 +1,50 @@
-import { createServer } from 'http';
-import express from 'express';
-import cors from 'cors';
-import { Server } from 'socket.io';
+import { getQueue } from './services/queueService.js';
 
-import socketHandler from './socketHandler.js';
-import tokenRoutes from './routes/tokenRoutes.js';
-import doctorRoutes from './routes/doctorRoutes.js';
-import summaryRoutes from './routes/summaryRoutes.js';
-import emergencyRoutes from './routes/emergencyRoutes.js';
+let ioInstance = null;
 
-const app = express();
+export function getIO() {
+  if (!ioInstance) {
+    throw new Error('Socket.IO instance not initialized. Server not started?');
+  }
+  return ioInstance;
+}
 
-app.use(express.json());
+export default function socketHandler(io, socket) {
+  ioInstance = io;
 
-app.use(
-  cors({
-    origin: [
-      'http://localhost:5173',
-      'https://hc01staxoverflow.vercel.app'
-    ],
-    credentials: true,
-  })
-);
+  socket.join('queue-room');
+  console.log(`Client connected: ${socket.id}`);
 
-// Routes
-app.use('/api/tokens', tokenRoutes);
-app.use('/api/doctors', doctorRoutes);
-app.use('/api/summary', summaryRoutes);
-app.use('/api/emergency', emergencyRoutes);
+  socket.on('join_room', (room) => {
+    const sanitizedRoom = String(room).trim();
+    if (sanitizedRoom.length === 0 || sanitizedRoom.length > 50) {
+      socket.emit('error', { message: 'Invalid room name' });
+      return;
+    }
 
-// Optional test route
-app.get('/', (req, res) => {
-  res.send('Backend is running');
-});
+    const validRooms = ['queue-room', 'doctor-room', 'display-room', 'reception-room'];
+    if (validRooms.includes(sanitizedRoom)) {
+      socket.join(sanitizedRoom);
+      console.log(`${socket.id} joined ${sanitizedRoom}`);
+    } else {
+      socket.emit('error', { message: 'Invalid room' });
+    }
+  });
 
-const httpServer = createServer(app);
+  socket.on('request_queue', async () => {
+    try {
+      const queue = await getQueue();
+      socket.emit('queue_updated', queue);
+    } catch (error) {
+      console.error('Error sending queue:', error.message);
+    }
+  });
 
-const io = new Server(httpServer, {
-  cors: {
-    origin: [
-      'http://localhost:5173',
-      'https://hc01staxoverflow.vercel.app'
-    ],
-    methods: ['GET', 'POST'],
-    credentials: true,
-  },
-  path: '/socket.io',
-});
+  socket.on('disconnect', () => {
+    console.log(`Client disconnected: ${socket.id}`);
+  });
 
-// Handle socket connections
-io.on('connection', (socket) => {
-  socketHandler(io, socket);
-});
-
-const PORT = process.env.PORT || 5000;
-
-httpServer.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+  socket.on('error', (error) => {
+    console.error('Socket error:', error);
+  });
+}

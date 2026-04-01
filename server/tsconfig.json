@@ -4,6 +4,8 @@
     "lib": ["ES2022"],
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "allowJs": true,
+    "checkJs": false,
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "composite": true,
@@ -25,6 +27,6 @@
       "@config/*": ["./config/*"]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx"],
+  "include": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.d.ts"],
   "exclude": ["node_modules", "dist"]
 }

@@ -19,7 +19,7 @@ const app: Express = express();
 const server = http.createServer(app);
 
 // Allowed frontend origins
-cconst allowedOrigins: string[] = [
+const allowedOrigins: string[] = [
   'http://localhost:5173',
   process.env.CORS_ORIGIN || '',
 ].filter((origin): origin is string => Boolean(origin));
@@ -87,7 +87,7 @@ connectDB()
       console.log(`🌐 Allowed origins: ${allowedOrigins.join(', ')}`);
     });
   })
-  .catch((error) => {
+  .catch((error: unknown) => {
     console.error('Database connection failed:', error);
     process.exit(1);
   });
