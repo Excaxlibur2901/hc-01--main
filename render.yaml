@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: hospital-queue-client
+    env: node
+    plan: free
+    buildCommand: cd client && npm install && npm run build
+    startCommand: cd client && npm run preview
+    envVars:
+      - key: VITE_SOCKET_URL
+        fromDatabase:
+          name: hospital-queue-db
+          property: connection_string
+      - key: VITE_API_URL
+        value: https://hospital-queue-api.onrender.com
+  - type: web
+    name: hospital-queue-server
+    env: node
+    plan: free
+    buildCommand: cd server && npm install
+    startCommand: cd server && npm run start
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: AI_URL
+        value: http://localhost:8001
+      - key: CORS_ORIGIN
+        value: https://hospital-queue-client.onrender.com
+  - type: worker
+    name: hospital-queue-ai
+    env: python
+    plan: free
+    buildCommand: cd ai && pip install -r requirements.txt
+    startCommand: cd ai && uvicorn main:app --host 0.0.0.0 --port $PORT
+

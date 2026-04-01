@@ -1,0 +1,1 @@
+# Fix clsx import error in Button.jsx\n\n✅ Imports fixed in Card.jsx, Badge.jsx, Input.jsx, Spinner.jsx (Button was correct)\n✅ Vite cache clear command provided below\n\nNext steps:\n- Restart Vite dev server with `cd client && npm run dev`\n- Error should be resolved.\n\nThe root cause was inconsistent clsx imports across common components.
