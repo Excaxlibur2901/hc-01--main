@@ -8,11 +8,11 @@ export default defineConfig({
 
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'https://hospital-queue-backend-e99o.onrender.com',
         changeOrigin: true,
       },
       '/socket.io': {
-        target: 'http://localhost:5000',
+        target: 'https://hospital-queue-backend-e99o.onrender.com',
         ws: true,
         changeOrigin: true,
       }

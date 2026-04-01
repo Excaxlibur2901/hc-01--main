@@ -1,54 +1,60 @@
-import { getQueue } from './services/queueService.js';
+import { createServer } from 'http';
+import express from 'express';
+import cors from 'cors';
+import { Server } from 'socket.io';
 
-let ioInstance = null;
+import socketHandler from './socketHandler.js';
+import tokenRoutes from './routes/tokenRoutes.js';
+import doctorRoutes from './routes/doctorRoutes.js';
+import summaryRoutes from './routes/summaryRoutes.js';
+import emergencyRoutes from './routes/emergencyRoutes.js';
 
-export function getIO() {
-  if (!ioInstance) {
-    throw new Error('Socket.IO instance not initialized. Server not started?');
-  }
-  return ioInstance;
-}
+const app = express();
 
-export default function socketHandler(io, socket) {
-  ioInstance = io;
+app.use(express.json());
 
-  // All clients auto-join queue room for updates
-  socket.join('queue-room');
-  console.log(`Client connected: ${socket.id}`);
+app.use(
+  cors({
+    origin: [
+      'http://localhost:5173',
+      'https://hc01staxoverflow-bpd4gij1p-vipulpahirrao200-9819s-projects.vercel.app'
+    ],
+    credentials: true,
+  })
+);
 
-  // Join specific rooms on request
-  socket.on('join_room', (room) => {
-    // Sanitize input
-    const sanitizedRoom = String(room).trim();
-    if (sanitizedRoom.length === 0 || sanitizedRoom.length > 50) {
-      socket.emit('error', { message: 'Invalid room name' });
-      return;
-    }
-    
-    const validRooms = ['queue-room', 'doctor-room', 'display-room', 'reception-room'];
-    if (validRooms.includes(sanitizedRoom)) {
-      socket.join(sanitizedRoom);
-      console.log(`${socket.id} joined ${sanitizedRoom}`);
-    } else {
-      socket.emit('error', { message: 'Invalid room' });
-    }
-  });
+// Routes
+app.use('/api/tokens', tokenRoutes);
+app.use('/api/doctors', doctorRoutes);
+app.use('/api/summary', summaryRoutes);
+app.use('/api/emergency', emergencyRoutes);
 
-  // Client requests current queue state
-  socket.on('request_queue', async () => {
-    try {
-      const queue = await getQueue();
-      socket.emit('queue_updated', queue);
-    } catch (error) {
-      console.error('Error sending queue:', error.message);
-    }
-  });
+// Optional test route
+app.get('/', (req, res) => {
+  res.send('Backend is running');
+});
 
-  socket.on('disconnect', () => {
-    console.log(`Client disconnected: ${socket.id}`);
-  });
+const httpServer = createServer(app);
 
-  socket.on('error', (error) => {
-    console.error('Socket error:', error);
-  });
-}
+const io = new Server(httpServer, {
+  cors: {
+    origin: [
+      'http://localhost:5173',
+      'https://hc01staxoverflow-bpd4gij1p-vipulpahirrao200-9819s-projects.vercel.app'
+    ],
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
+  path: '/socket.io',
+});
+
+// Handle socket connections
+io.on('connection', (socket) => {
+  socketHandler(io, socket);
+});
+
+const PORT = process.env.PORT || 5000;
+
+httpServer.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
