@@ -17,7 +17,7 @@ app.use(
   cors({
     origin: [
       'http://localhost:5173',
-      'https://hc01staxoverflow-bpd4gij1p-vipulpahirrao200-9819s-projects.vercel.app'
+      'https://hc01staxoverflow.vercel.app'
     ],
     credentials: true,
   })
@@ -40,7 +40,7 @@ const io = new Server(httpServer, {
   cors: {
     origin: [
       'http://localhost:5173',
-      'https://hc01staxoverflow-bpd4gij1p-vipulpahirrao200-9819s-projects.vercel.app'
+      'https://hc01staxoverflow.vercel.app'
     ],
     methods: ['GET', 'POST'],
     credentials: true,
